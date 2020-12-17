@@ -1,0 +1,181 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - '*'
+    tags:
+      - 'v*'
+    paths-ignore:
+      - '**.md'
+  pull_request:
+    paths-ignore:
+      - '**.md'
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Cache vendor
+        id: cache-vendor
+        uses: actions/cache@v2
+        with:
+          path: vendor
+          key: ${{ github.sha }}
+      - name: Vendoring
+        if: steps.cache-vendor.outputs.cache-hit != 'true'
+        run: make vendor
+      - name: Generate wire injectors
+        run: make wire
+      - name: Lint
+        run: make lint
+      - name: Run tests
+        run: make test
+      - name: Send code coverage report
+        uses: codecov/codecov-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: test/coverage.out
+
+  binary:
+    name: Build binary
+    runs-on: ubuntu-18.04
+    needs: test
+    if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
+    strategy:
+      matrix:
+        goos: [ darwin, linux, windows ]
+        goarch: [ amd64 ]
+      max-parallel: 3
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Cache vendor
+        id: cache-vendor
+        uses: actions/cache@v2
+        with:
+          path: vendor
+          key: ${{ github.sha }}
+      - name: Vendoring
+        if: steps.cache-vendor.outputs.cache-hit != 'true'
+        run: make vendor
+      - name: Generate wire injectors
+        run: make wire
+      - name: Get tag reference
+        id: get-tag-reference
+        uses: ankitvgupta/ref-to-tag-action@master
+        with:
+          ref: ${{ github.ref }}
+          head_ref: ${{ github.head_ref }}
+      - name: Build
+        run: make build GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} BUIlD_VERSION="${{ steps.get-tag-reference.outputs.tag }}"
+      - name: Upload compiled binary
+        uses: actions/upload-artifact@v2
+        with:
+          name: pinchy-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: bin/pinchy
+
+  image:
+    name: Push docker image
+    runs-on: ubuntu-18.04
+    needs: binary
+    if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
+    strategy:
+      matrix:
+        goos: [ linux ]
+        goarch: [ amd64 ]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Download compiled binary
+        uses: actions/download-artifact@v2
+        with:
+          name: pinchy-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: bin
+      - name: Get tag reference
+        id: get-tag-reference
+        uses: ankitvgupta/ref-to-tag-action@master
+        with:
+          ref: ${{ github.ref }}
+          head_ref: ${{ github.head_ref }}
+      - name: Build docker image for github registry
+        run: |
+          make docker-image-build DOCKER_TAG=${{ steps.get-tag-reference.outputs.tag }}
+      - name: Push docker image to github registry
+        run: |
+          make docker-image-push \
+            DOCKER_USER=${{ github.actor }} \
+            DOCKER_PASSWORD=${{ secrets.GITHUB_TOKEN }} \
+            DOCKER_TAG=${{ steps.get-tag-reference.outputs.tag }}
+      - name: Build docker image for github registry as latest
+        run: |
+          make docker-image-build DOCKER_TAG="latest"
+      - name: Push docker image to github registry as latest
+        run: |
+          make docker-image-push \
+            DOCKER_USER=${{ github.actor }} \
+            DOCKER_PASSWORD=${{ secrets.GITHUB_TOKEN }} \
+            DOCKER_TAG="latest"
+      - name: Build docker image for docker hub registry
+        run: |
+          make docker-image-build \
+            DOCKER_IMAGE=${{ github.repository }} \
+            DOCKER_TAG=${{ steps.get-tag-reference.outputs.tag }}
+      - name: Push docker image to docker hub registry
+        run: |
+          make docker-image-push \
+            DOCKER_REGISTRY=docker.io \
+            DOCKER_IMAGE=${{ github.repository }} \
+            DOCKER_USER=${{ secrets.DOCKER_HUB_USERNAME }} \
+            DOCKER_PASSWORD=${{ secrets.DOCKER_HUB_PASSWORD }} \
+            DOCKER_TAG=${{ steps.get-tag-reference.outputs.tag }}
+      - name: Build docker image for docker hub registry as latest
+        run: |
+          make docker-image-build \
+            DOCKER_IMAGE=${{ github.repository }} \
+            DOCKER_TAG="latest"
+      - name: Push docker image to docker hub registry as latest
+        run: |
+          make docker-image-push \
+            DOCKER_REGISTRY=docker.io \
+            DOCKER_IMAGE=${{ github.repository }} \
+            DOCKER_USER=${{ secrets.DOCKER_HUB_USERNAME }} \
+            DOCKER_PASSWORD=${{ secrets.DOCKER_HUB_PASSWORD }} \
+            DOCKER_TAG="latest"
+  release:
+    name: Upload release asset
+    runs-on: ubuntu-18.04
+    needs: binary
+    if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
+    strategy:
+      matrix:
+        goos: [ darwin, linux, windows ]
+        goarch: [ amd64 ]
+      max-parallel: 3
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Download compiled binary
+        uses: actions/download-artifact@v2
+        with:
+          name: pinchy-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: bin
+      - name: Tar artifact
+        run: tar -zcvf pinchy-${{ matrix.goos }}-${{ matrix.goarch }}.tar.gz -C bin pinchy
+      - name: Get tag reference
+        id: get-tag-reference
+        uses: ankitvgupta/ref-to-tag-action@master
+        with:
+          ref: ${{ github.ref }}
+          head_ref: ${{ github.head_ref }}
+      - name: Upload binaries to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: pinchy-${{ matrix.goos }}-${{ matrix.goarch }}.tar.gz
+          asset_name: pinchy-${{ matrix.goos }}-${{ matrix.goarch }}.tar.gz
+          tag: ${{ steps.get-tag-reference.outputs.tag }}
+          release_name: Pinchy ${{ steps.get-tag-reference.outputs.tag }}

@@ -1,0 +1,9 @@
+- name: service-name
+  address: 127.0.0.1
+  id: service-id
+  port: 80
+  tags:
+    - tag-1
+    - tag-2
+  meta:
+    key: value
