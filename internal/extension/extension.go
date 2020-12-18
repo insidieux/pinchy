@@ -5,9 +5,11 @@ import (
 )
 
 type (
+	// RegisterError is custom implementation of error interface
 	RegisterError []error
 )
 
+// String return all error message like string with ";" delimiter
 func (re RegisterError) String() string {
 	var slice []string
 	for _, err := range re {
@@ -16,6 +18,7 @@ func (re RegisterError) String() string {
 	return strings.Join(slice, `; `)
 }
 
+// Error is implementation of error interface
 func (re RegisterError) Error() string {
 	return re.String()
 }

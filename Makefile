@@ -49,13 +49,33 @@ wire:
 		wire:custom \
 			/project/...
 
-.PHONY: lint
-lint:
+.PHONY: lint-golangci-lint
+lint-golangci-lint:
 	@docker run --rm \
 		-v ${PWD}:/project \
 		-w /project \
 		golangci/golangci-lint:v1.33.0 \
 			golangci-lint run -v
+
+.PHONY: lint-golint
+lint-golint:
+	@docker build \
+		--build-arg GO_VERSION=${GO_VERSION} \
+		-f ${PWD}/build/docker/utils/golint/Dockerfile \
+		-t golint:custom \
+			build/docker/utils/golint
+	@docker run --rm \
+		-v ${PWD}:/project \
+		-w /project \
+		golint:custom \
+			/project/pkg/... \
+			/project/internal/... \
+			/project/cmd/...
+
+.PHONY: lint
+lint:
+	@make lint-golangci-lint
+	@make lint-golint
 
 .PHONY: test
 test:

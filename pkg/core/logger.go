@@ -1,6 +1,7 @@
 package core
 
 type (
+	// LoggerInterface provides common log methods. This is replica for logrus.FieldLogger.
 	LoggerInterface interface {
 		Debugf(format string, args ...interface{})
 		Infof(format string, args ...interface{})
@@ -29,6 +30,8 @@ type (
 		Fatalln(args ...interface{})
 		Panicln(args ...interface{})
 	}
+
+	// Loggable determine possibility to inject LoggerInterface. Can be used to wire Source and Registry implementations
 	Loggable interface {
 		WithLogger(LoggerInterface)
 	}

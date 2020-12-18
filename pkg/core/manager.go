@@ -10,19 +10,27 @@ import (
 )
 
 type (
+	// ManagerInterface is main unit between Source and Registry.
+	// Implementation must provide full cycle for fetch services from Source and register them into Registry.
 	ManagerInterface interface {
 		Run(ctx context.Context) error
 	}
+
+	// Manager is built-in ManagerInterface implementation.
 	Manager struct {
 		source      Source
 		registry    Registry
 		logger      LoggerInterface
 		exitOnError ManagerExitOnError
 	}
+
+	// ManagerExitOnError provide information how to handle errors and panics during manager.Run process.
 	ManagerExitOnError bool
-	managerError       []error
+
+	managerError []error
 )
 
+// NewManager provider built-in ManagerInterface implementation
 func NewManager(source Source, registry Registry, logger LoggerInterface, exitOnError ManagerExitOnError) ManagerInterface {
 	return &Manager{
 		source:      source,
@@ -32,6 +40,12 @@ func NewManager(source Source, registry Registry, logger LoggerInterface, exitOn
 	}
 }
 
+// Run contains next steps
+// - Call Source.Fetch
+// - Call Registry.Fetch
+// - Check orphan Services fetched from Registry
+// - Remove orphan Services
+// - Register Services fetched from Source
 func (m *Manager) Run(ctx context.Context) error {
 	incoming, err := m.source.Fetch(ctx)
 	if err != nil {

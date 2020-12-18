@@ -8,6 +8,8 @@ import (
 )
 
 type (
+	// Scheduler is simple wrapper for ManagerInterface.
+	// Scheduler provides possibility to call Manager.Run with constant interval passed to time.Ticker.
 	Scheduler struct {
 		ticker  *time.Ticker
 		manager ManagerInterface
@@ -15,6 +17,7 @@ type (
 	}
 )
 
+// NewScheduler provides Scheduler with predefined time.Ticker, ManagerInterface and LoggerInterface
 func NewScheduler(ticker *time.Ticker, manager ManagerInterface, logger LoggerInterface) *Scheduler {
 	return &Scheduler{
 		ticker:  ticker,
@@ -23,6 +26,7 @@ func NewScheduler(ticker *time.Ticker, manager ManagerInterface, logger LoggerIn
 	}
 }
 
+// Run start listen time.Ticker ticks until context.Context canceled.
 func (s *Scheduler) Run(ctx context.Context) {
 	for {
 		select {

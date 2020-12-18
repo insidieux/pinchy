@@ -10,22 +10,27 @@ import (
 )
 
 type (
+	// Agent interface provide common function for work with Consul HTTP API
 	Agent interface {
 		Services() (map[string]*api.AgentService, error)
 		ServiceRegister(service *api.AgentServiceRegistration) error
 		ServiceDeregister(serviceID string) error
 	}
+
+	// Registry is implementation of core.Registry interface
 	Registry struct {
 		agent Agent
 	}
 )
 
+// NewRegistry provide Registry as core.Registry implementation
 func NewRegistry(agent Agent) *Registry {
 	return &Registry{
 		agent: agent,
 	}
 }
 
+// Fetch make request for Agent.Services and try to cast result to core.Services
 func (r *Registry) Fetch(_ context.Context) (core.Services, error) {
 	registered, err := r.agent.Services()
 	if err != nil {
@@ -52,6 +57,7 @@ func (r *Registry) Fetch(_ context.Context) (core.Services, error) {
 	return result, nil
 }
 
+// Deregister make request for Agent.ServiceDeregister by core.Service RegistrationID
 func (r *Registry) Deregister(_ context.Context, serviceID string) error {
 	if err := r.agent.ServiceDeregister(serviceID); err != nil {
 		return errors.Wrapf(err, `failed deregister service by service id "%s"`, serviceID)
@@ -59,6 +65,7 @@ func (r *Registry) Deregister(_ context.Context, serviceID string) error {
 	return nil
 }
 
+// Register make request for Agent.ServiceRegister for core.Service
 func (r *Registry) Register(ctx context.Context, service *core.Service) error {
 	if err := service.Validate(ctx); err != nil {
 		return errors.Wrap(err, `service has validation error before registration`)
