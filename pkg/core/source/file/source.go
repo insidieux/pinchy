@@ -9,10 +9,15 @@ import (
 )
 
 type (
+	// Reader tries to read content from file by name
 	Reader interface {
 		ReadFile(name string) ([]byte, error)
 	}
-	Path   string
+
+	// Path is custom type for file path string
+	Path string
+
+	// Source is implementation of core.Source interface
 	Source struct {
 		reader   Reader
 		filename Path
@@ -20,6 +25,7 @@ type (
 	}
 )
 
+// NewSource provide Source as core.Source implementation
 func NewSource(reader Reader, filename Path) *Source {
 	return &Source{
 		reader:   reader,
@@ -27,6 +33,11 @@ func NewSource(reader Reader, filename Path) *Source {
 	}
 }
 
+// Fetch provide information about core.Services from file
+// - call Reader.ReadFile
+// - yaml.Unmarshal contents
+// - validate core.Service
+// - return core.Services
 func (s *Source) Fetch(ctx context.Context) (core.Services, error) {
 	contents, err := s.reader.ReadFile(string(s.filename))
 	if err != nil {
@@ -50,6 +61,7 @@ func (s *Source) Fetch(ctx context.Context) (core.Services, error) {
 	return result, nil
 }
 
+// WithLogger is implementation of core.Loggable interface
 func (s *Source) WithLogger(logger core.LoggerInterface) {
 	s.logger = logger
 }

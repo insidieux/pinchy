@@ -16,14 +16,24 @@ const (
 )
 
 type (
-	Factory           func(*viper.Viper) (core.Source, func(), error)
+	// Factory is helper function to provide core.Source implementation.
+	// Function MUST return (core.Source, func(), error) for further call with google.wire
+	Factory func(*viper.Viper) (core.Source, func(), error)
+
+	// ProviderInterface contains main information about extension.
+	// Name is used for unique registration and validation
+	// Flags used for provide cobra.Command flags
+	// Factory used in generation main command source code with google.wire
 	ProviderInterface interface {
 		Name() string
 		Flags() *pflag.FlagSet
 		Factory() Factory
 	}
+
+	// ProviderList is helper custom type for handle registration and lookup for slice of ProviderInterface
 	ProviderList []ProviderInterface
-	provider     struct {
+
+	provider struct {
 		name    string
 		flags   *pflag.FlagSet
 		factory Factory
@@ -34,18 +44,24 @@ var (
 	providerList = newProviderList()
 )
 
+// newProviderList return new empty ProviderList
 func newProviderList() *ProviderList {
 	return new(ProviderList)
 }
 
+// GetProviderList return internal ProviderList with pre-registered slice of ProviderInterface
 func GetProviderList() ProviderList {
 	return *providerList
 }
 
+// MakeFlagName is helper for generation valid flag name
 func MakeFlagName(name string) string {
 	return fmt.Sprintf(`%s.%s`, flagPrefix, name)
 }
 
+// Register new ProviderInterface implementation by name, flags and factory
+// Register return error if ProviderInterface already registered with same name
+// Register return error if ProviderInterface provide flags with incorrect name prefix
 func Register(name string, flags *pflag.FlagSet, factory Factory) error {
 	return providerList.register(&provider{
 		name:    name,
@@ -54,14 +70,17 @@ func Register(name string, flags *pflag.FlagSet, factory Factory) error {
 	})
 }
 
+// Name return ProviderInterface implementation name
 func (p *provider) Name() string {
 	return p.name
 }
 
+// Name return ProviderInterface implementation flags
 func (p *provider) Flags() *pflag.FlagSet {
 	return p.flags
 }
 
+// Name return ProviderInterface implementation factory
 func (p *provider) Factory() Factory {
 	return p.factory
 }
@@ -83,6 +102,8 @@ func (pl *ProviderList) register(p ProviderInterface) error {
 	return nil
 }
 
+// Lookup return registered ProviderInterface by name
+// Lookup return error if ProviderInterface was not registered with called name
 func (pl ProviderList) Lookup(name string) (ProviderInterface, error) {
 	for _, p := range pl {
 		if p.Name() == name {
@@ -92,6 +113,7 @@ func (pl ProviderList) Lookup(name string) (ProviderInterface, error) {
 	return nil, errors.Errorf(`source provider with name "%s" was not registered`, name)
 }
 
+// Get return slice of registered ProviderInterface's
 func (pl ProviderList) Get() []ProviderInterface {
 	return pl
 }

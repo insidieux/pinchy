@@ -15,6 +15,8 @@ const (
 	name = `pinchy`
 )
 
+// NewCommand provide root cobra.Command
+// Root command contains pre-generated subcommands for all registered core.Source and core.Registry
 func NewCommand(version string) *cobra.Command {
 	rootCommand := &cobra.Command{
 		Use:     name,

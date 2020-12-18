@@ -26,7 +26,7 @@ docker pull docker.pkg.github.com/insidieux/pinchy
 Alternatively, you can use the go get method:
 
 ```shell
-go get github.com/insidiuex/pinchy/cmd/pinchy
+go get github.com/insidieux/pinchy/cmd/pinchy
 ```
 
 Ensure that `$GOPATH/bin` is added to your `$PATH`.
