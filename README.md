@@ -31,7 +31,7 @@ Ensure that `$GOPATH/bin` is added to your `$PATH`.
 - [Contributing guide][]
 
 [User guide]: ./docs/user-guide.md
-[Contributing guide]: ./docs/contributing-guide.md
+[Contributing guide]: ./docs/contributing.md
 
 ## License
 
