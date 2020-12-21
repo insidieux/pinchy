@@ -68,6 +68,7 @@ lint-golint:
 		-v ${PWD}:/project \
 		-w /project \
 		golint:custom \
+			--set_exit_status \
 			/project/pkg/... \
 			/project/internal/... \
 			/project/cmd/...
