@@ -3,20 +3,16 @@ package core
 import (
 	"context"
 
-	"github.com/go-playground/validator/v10"
+	"github.com/pkg/errors"
 	"github.com/spf13/cast"
 	"github.com/thoas/go-funk"
-)
-
-var (
-	validation = validator.New()
 )
 
 type (
 	// Service contains all the necessary information for further registration in Registry
 	Service struct {
-		Name    string             `json:"," validate:"required"`
-		Address string             `json:"," validate:"required"`
+		Name    string             `json:","`
+		Address string             `json:","`
 		ID      *string            `json:",omitempty"`
 		Port    *int               `json:",omitempty"`
 		Tags    *[]string          `json:",omitempty"`
@@ -28,8 +24,14 @@ type (
 )
 
 // Validate process validation to check required fields for Service, such as Service.Name and Service.Address
-func (s *Service) Validate(ctx context.Context) error {
-	return validation.StructCtx(ctx, s)
+func (s *Service) Validate(_ context.Context) error {
+	if s.Name == `` {
+		return errors.New(`service field "name" is required and cannot be empty`)
+	}
+	if s.Address == `` {
+		return errors.Errorf(`service "%s" field "address" is required and cannot be empty`, s.Name)
+	}
+	return nil
 }
 
 // RegistrationID generate identification for registration in Registry.

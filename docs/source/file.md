@@ -3,18 +3,9 @@
 ## Available flags
 
 ```
---source.path %full-path-to-yml-file%
+--source.path string   YML file config path (default "$HOME/services.yml")
 ```
 
-## config.yml example
+## services.yml example
 
-```yaml
-- name: service-name
-  id: service-id
-  port: 80
-  tags:
-    - tag-1
-    - tag-2
-  meta:
-    key: value
-```
+Example services.yml file be found in [configs](./../../configs/source/file/example.yml) file.

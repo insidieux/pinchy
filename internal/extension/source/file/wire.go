@@ -13,9 +13,9 @@ import (
 
 func NewSource(*viper.Viper) (core.Source, func(), error) {
 	panic(wire.Build(
-		newReader,
+		provideReader,
 		wire.Bind(new(pkgFile.Reader), new(afero.Afero)),
-		newPath,
+		providePath,
 		pkgFile.NewSource,
 		wire.Bind(new(core.Source), new(*pkgFile.Source)),
 	))

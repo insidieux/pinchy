@@ -23,6 +23,10 @@ func TestSource_Fetch(t *testing.T) {
 	suite.Run(t, new(sourceFetchTestSuite))
 }
 
+func TestSource_WithLogger(t *testing.T) {
+	suite.Run(t, new(sourceWithLoggerTestSuite))
+}
+
 // --- Suites ---
 
 type newSourceTestSuite struct {
@@ -39,11 +43,13 @@ type sourceFetchTestSuite struct {
 	suite.Suite
 	source *Source
 	reader afero.Afero
+	hook   *test.Hook
 }
 
 func (s *sourceFetchTestSuite) SetupTest() {
 	s.reader = afero.Afero{Fs: afero.NewMemMapFs()}
 	s.source = NewSource(s.reader, `filename`)
+	s.source.logger, s.hook = test.NewNullLogger()
 }
 
 func (s *sourceFetchTestSuite) TestErrorRead() {
@@ -85,15 +91,12 @@ func (s *sourceFetchTestSuite) TestSkipServiceValidationCase() {
 		panic(errors.Wrap(err, `failed to write to in-memory file`))
 	}
 
-	logger, hook := test.NewNullLogger()
-	s.source.WithLogger(logger)
-
 	services, err := s.source.Fetch(context.Background())
 	s.NotNil(services)
 	s.NoError(err)
 	s.Equal(core.Services{}, services)
-	s.Equal(hook.LastEntry().Level, logrus.WarnLevel)
-	s.Contains(hook.LastEntry().Message, `failed to validate service`)
+	s.Equal(s.hook.LastEntry().Level, logrus.WarnLevel)
+	s.Equal(s.hook.LastEntry().Message, `Failed to validate service #0: service "service" field "address" is required and cannot be empty`)
 }
 
 func (s *sourceFetchTestSuite) TestSuccess() {
@@ -123,4 +126,14 @@ func (s *sourceFetchTestSuite) TestSuccess() {
 	s.NotNil(services)
 	s.NoError(err)
 	s.Equal(expected, services)
+}
+
+type sourceWithLoggerTestSuite struct {
+	suite.Suite
+}
+
+func (s *sourceWithLoggerTestSuite) TestWithLogger() {
+	logger, _ := test.NewNullLogger()
+	src := NewSource(nil, `filename`)
+	src.WithLogger(logger)
 }

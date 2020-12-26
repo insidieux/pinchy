@@ -39,20 +39,23 @@ func NewSource(reader Reader, filename Path) *Source {
 // - validate core.Service
 // - return core.Services
 func (s *Source) Fetch(ctx context.Context) (core.Services, error) {
+	s.logger.Infof(`Reading file "%s"`, s.filename)
 	contents, err := s.reader.ReadFile(string(s.filename))
 	if err != nil {
 		return nil, errors.Wrap(err, `failed read content from config file`)
 	}
 
+	s.logger.Infoln(`Decoding yml config`)
 	items := make([]*core.Service, 0)
 	if err := yaml.Unmarshal(contents, &items); err != nil {
 		return nil, errors.Wrap(err, `failed unmarshal content from config file`)
 	}
 
+	s.logger.Infoln(`Collecting services list with service validation`)
 	result := make([]*core.Service, 0)
-	for _, item := range items {
+	for index, item := range items {
 		if err := item.Validate(ctx); err != nil {
-			s.logger.Warningln(errors.Wrap(err, `failed to validate service`).Error())
+			s.logger.Warningln(errors.Wrapf(err, `Failed to validate service #%d`, index).Error())
 			continue
 		}
 		result = append(result, item)

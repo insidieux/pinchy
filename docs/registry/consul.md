@@ -3,5 +3,5 @@
 ## Available flags
 
 ```
---registry.address %full-http-url-to-consul-api%
+--registry.address string   Consul http api address (default "127.0.0.1:8500")
 ```

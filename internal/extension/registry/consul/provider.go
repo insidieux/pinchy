@@ -16,6 +16,8 @@ const (
 	registryName = `consul`
 
 	flagConsulAddress = `address`
+
+	defaultCommonTag = `pinchy`
 )
 
 type (
@@ -33,7 +35,7 @@ func init() {
 	}
 }
 
-func newClientConfig(v *viper.Viper, transport *http.Transport) (*api.Config, error) {
+func provideClientConfig(v *viper.Viper, transport *http.Transport) (*api.Config, error) {
 	flag := registry.MakeFlagName(flagConsulAddress)
 	address := v.GetString(flag)
 	if address == `` {
@@ -50,7 +52,7 @@ func provideConsulClientFactory() factory {
 	return api.NewClient
 }
 
-func newClient(cfg *api.Config, factory factory) (client, error) {
+func provideClient(cfg *api.Config, factory factory) (client, error) {
 	c, err := factory(cfg)
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to create consul client`)
@@ -58,6 +60,6 @@ func newClient(cfg *api.Config, factory factory) (client, error) {
 	return c, nil
 }
 
-func newAgent(c client) pkgConsul.Agent {
+func provideAgent(c client) pkgConsul.Agent {
 	return c.Agent()
 }

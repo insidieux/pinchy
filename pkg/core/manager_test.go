@@ -56,6 +56,7 @@ type managerRunTestSuite struct {
 
 func (s *managerRunTestSuite) SetupTest() {
 	s.manager = new(Manager)
+	s.manager.logger, _ = test.NewNullLogger()
 }
 
 func (s *managerRunTestSuite) TestErrorFetchFromSource() {
@@ -91,11 +92,9 @@ func (s *managerRunTestSuite) TestErrorDeregisterOrphan() {
 	registryMock := new(MockRegistry)
 	registryMock.On(`Fetch`, ctx).Return(Services{{Name: `service-2`}}, nil)
 	registryMock.On(`Deregister`, ctx, `service-2`).Return(errors.New(`expected error`))
-	logger, _ := test.NewNullLogger()
 
 	s.manager.source = sourceMock
 	s.manager.registry = registryMock
-	s.manager.logger = logger
 	s.manager.exitOnError = true
 
 	err := s.manager.Run(ctx)
@@ -111,11 +110,9 @@ func (s *managerRunTestSuite) TestErrorRegister() {
 	registryMock := new(MockRegistry)
 	registryMock.On(`Fetch`, ctx).Return(Services{}, nil)
 	registryMock.On(`Register`, ctx, service).Return(errors.New(`expected error`))
-	logger, _ := test.NewNullLogger()
 
 	s.manager.source = sourceMock
 	s.manager.registry = registryMock
-	s.manager.logger = logger
 	s.manager.exitOnError = true
 
 	err := s.manager.Run(ctx)
