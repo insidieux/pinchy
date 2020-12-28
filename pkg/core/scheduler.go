@@ -33,7 +33,6 @@ func (s *Scheduler) Run(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-s.ticker.C:
-			s.logger.Infoln(`Running manager`)
 			if err := s.manager.Run(ctx); err != nil {
 				s.logger.Errorln(errors.Wrap(err, `failed to process manager run`).Error())
 			}
