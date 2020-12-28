@@ -65,6 +65,9 @@ func NewCommand(version string) *cobra.Command {
 			}
 			watchCommand.Flags().Duration(`scheduler.interval`, time.Minute, `Interval between manager runs (1s, 1m, 5m, 1h and others)`)
 			registryCmd.PersistentFlags().Bool(`manager.continue-on-error`, false, `Omit errors during process manager`)
+			registryCmd.PersistentFlags().Bool(`manager.exit-on-error`, false, `Stop manager process on first error and by pass it to command line`)
+			_ = registryCmd.PersistentFlags().MarkDeprecated(`manager.continue-on-error`, `Flag "manager.continue-on-error" is deprecated, use "manager.exit-on-error" instead`)
+			_ = registryCmd.PersistentFlags().MarkHidden(`manager.continue-on-error`)
 			registryCmd.PersistentFlags().AddFlagSet(registryProvider.Flags())
 			registryCmd.AddCommand(onceCommand)
 			registryCmd.AddCommand(watchCommand)

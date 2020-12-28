@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/consul/api"
 	"github.com/insidieux/pinchy/pkg/core"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 )
@@ -30,6 +31,10 @@ func TestRegistry_Register(t *testing.T) {
 	suite.Run(t, new(registryRegisterTestSuite))
 }
 
+func TestRegistry_WithLogger(t *testing.T) {
+	suite.Run(t, new(registryWithLoggerTestSuite))
+}
+
 // --- Suites ---
 
 type newRegistryTestSuite struct {
@@ -37,9 +42,9 @@ type newRegistryTestSuite struct {
 }
 
 func (s *newRegistryTestSuite) TestNewSource() {
-	got := NewRegistry(nil)
+	got := NewRegistry(nil, ``)
 	s.Implements((*core.Registry)(nil), got)
-	s.Equal(&Registry{nil}, got)
+	s.Equal(&Registry{nil, nil, ``}, got)
 }
 
 type registryFetchTestSuite struct {
@@ -50,11 +55,12 @@ type registryFetchTestSuite struct {
 
 func (s *registryFetchTestSuite) SetupTest() {
 	s.agent = new(MockAgent)
-	s.registry = NewRegistry(s.agent)
+	s.registry = NewRegistry(s.agent, `test`)
+	s.registry.logger, _ = test.NewNullLogger()
 }
 
 func (s *registryFetchTestSuite) TestErrorAgentFetch() {
-	s.agent.On(`Services`).Return(nil, errors.New(`expected error`))
+	s.agent.On(`ServicesWithFilter`, mock.Anything).Return(nil, errors.New(`expected error`))
 
 	s.registry.agent = s.agent
 	services, err := s.registry.Fetch(context.Background())
@@ -63,7 +69,7 @@ func (s *registryFetchTestSuite) TestErrorAgentFetch() {
 }
 
 func (s *registryFetchTestSuite) TestSuccess() {
-	s.agent.On(`Services`).Return(map[string]*api.AgentService{
+	s.agent.On(`ServicesWithFilter`, mock.Anything).Return(map[string]*api.AgentService{
 		`name`: {
 			ID:      `id`,
 			Service: `name`,
@@ -100,7 +106,8 @@ type registryDeregisterTestSuite struct {
 
 func (s *registryDeregisterTestSuite) SetupTest() {
 	s.agent = new(MockAgent)
-	s.registry = NewRegistry(s.agent)
+	s.registry = NewRegistry(s.agent, `test`)
+	s.registry.logger, _ = test.NewNullLogger()
 }
 
 func (s *registryDeregisterTestSuite) TestErrorAgentDeregister() {
@@ -125,7 +132,8 @@ type registryRegisterTestSuite struct {
 
 func (s *registryRegisterTestSuite) SetupTest() {
 	s.agent = new(MockAgent)
-	s.registry = NewRegistry(s.agent)
+	s.registry = NewRegistry(s.agent, `test`)
+	s.registry.logger, _ = test.NewNullLogger()
 }
 
 func (s *registryRegisterTestSuite) TestErrorServiceValidation() {
@@ -160,6 +168,16 @@ func (s *registryRegisterTestSuite) TestSuccess() {
 		Port:    ptr.Int(80),
 	})
 	s.NoError(err)
+}
+
+type registryWithLoggerTestSuite struct {
+	suite.Suite
+}
+
+func (s *registryWithLoggerTestSuite) TestWithLogger() {
+	logger, _ := test.NewNullLogger()
+	src := NewRegistry(nil, ``)
+	src.WithLogger(logger)
 }
 
 // --- Mocks ---
@@ -197,13 +215,13 @@ func (_m *MockAgent) ServiceRegister(service *api.AgentServiceRegistration) erro
 	return r0
 }
 
-// Services provides a mock function with given fields:
-func (_m *MockAgent) Services() (map[string]*api.AgentService, error) {
+// ServicesWithFilter provides a mock function with given fields: filter
+func (_m *MockAgent) ServicesWithFilter(filter string) (map[string]*api.AgentService, error) {
 	ret := _m.Called()
 
 	var r0 map[string]*api.AgentService
-	if rf, ok := ret.Get(0).(func() map[string]*api.AgentService); ok {
-		r0 = rf()
+	if rf, ok := ret.Get(0).(func(string) map[string]*api.AgentService); ok {
+		r0 = rf(filter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(map[string]*api.AgentService)
@@ -211,8 +229,8 @@ func (_m *MockAgent) Services() (map[string]*api.AgentService, error) {
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func() error); ok {
-		r1 = rf()
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(filter)
 	} else {
 		r1 = ret.Error(1)
 	}

@@ -18,20 +18,20 @@ const (
 
 func init() {
 	set := pflag.NewFlagSet(sourceName, pflag.ExitOnError)
-	set.String(source.MakeFlagName(flagFilePath), `$HOME/services.yml`, `services.yml config path`)
+	set.String(source.MakeFlagName(flagFilePath), `$HOME/services.yml`, `YML file config path`)
 
 	if err := source.Register(sourceName, set, NewSource); err != nil {
 		panic(err)
 	}
 }
 
-func newReader() afero.Afero {
+func provideReader() afero.Afero {
 	return afero.Afero{
 		Fs: afero.NewReadOnlyFs(afero.NewOsFs()),
 	}
 }
 
-func newPath(v *viper.Viper) (pkgFile.Path, error) {
+func providePath(v *viper.Viper) (pkgFile.Path, error) {
 	flag := source.MakeFlagName(flagFilePath)
 	path := v.GetString(flag)
 	if path == `` {

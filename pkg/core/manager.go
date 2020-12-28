@@ -47,18 +47,22 @@ func NewManager(source Source, registry Registry, logger LoggerInterface, exitOn
 // - Remove orphan Services
 // - Register Services fetched from Source
 func (m *Manager) Run(ctx context.Context) error {
+	m.logger.Infoln(`Fetching services from source`)
 	incoming, err := m.source.Fetch(ctx)
 	if err != nil {
 		return errors.Wrap(err, `failed to fetch services from source`)
 	}
 
+	m.logger.Infoln(`Fetching services from registry`)
 	registered, err := m.registry.Fetch(ctx)
 	if err != nil {
 		return errors.Wrap(err, `failed to fetch services from registry`)
 	}
 
+	m.logger.Infoln(`Checking difference between registered services and incoming list`)
 	orphan := m.findOrphan(incoming, registered)
 	if len(orphan) > 0 {
+		m.logger.Infof(`Deleting %d orphan services`, len(orphan))
 		if err := m.deregisterServices(ctx, orphan); err != nil {
 			err := errors.Wrap(err, `failed to deregister services`)
 			m.logger.Error(err.Error())
@@ -67,11 +71,15 @@ func (m *Manager) Run(ctx context.Context) error {
 			}
 		}
 	}
-	if err := m.registerServices(ctx, incoming); err != nil {
-		err := errors.Wrap(err, `failed to register services`)
-		m.logger.Error(err.Error())
-		if m.exitOnError {
-			return err
+
+	if len(incoming) > 0 {
+		m.logger.Infoln(`Registering services in registry`)
+		if err := m.registerServices(ctx, incoming); err != nil {
+			err := errors.Wrap(err, `failed to register services`)
+			m.logger.Error(err.Error())
+			if m.exitOnError {
+				return err
+			}
 		}
 	}
 	return nil

@@ -68,7 +68,7 @@ func provideSource(commandViper *viper.Viper, factory source.Factory, logger cor
 
 // Provider for core.Source
 func provideManagerExitOnError(commandViper *viper.Viper) core.ManagerExitOnError {
-	return core.ManagerExitOnError(commandViper.GetBool(`manager.continue-on-error`))
+	return core.ManagerExitOnError(commandViper.GetBool(`manager.exit-on-error`))
 }
 
 // Provider for time.Ticker

@@ -13,11 +13,12 @@ import (
 func NewRegistry(*viper.Viper) (core.Registry, func(), error) {
 	panic(wire.Build(
 		cleanhttp.DefaultPooledTransport,
-		newClientConfig,
+		provideClientConfig,
 		provideConsulClientFactory,
-		newClient,
-		newAgent,
+		provideClient,
+		provideAgent,
 		consul.NewRegistry,
+		wire.Value(consul.Tag(defaultCommonTag)),
 		wire.Bind(new(core.Registry), new(*consul.Registry)),
 	))
 }

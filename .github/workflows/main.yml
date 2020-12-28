@@ -44,7 +44,7 @@ jobs:
     name: Build binary
     runs-on: ubuntu-18.04
     needs: test
-    if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
+    if: github.event_name == 'push'
     strategy:
       matrix:
         goos: [ darwin, linux, windows ]
@@ -82,7 +82,7 @@ jobs:
     name: Push docker image
     runs-on: ubuntu-18.04
     needs: binary
-    if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
+    if: github.event_name == 'push'
     strategy:
       matrix:
         goos: [ linux ]
@@ -101,50 +101,26 @@ jobs:
         with:
           ref: ${{ github.ref }}
           head_ref: ${{ github.head_ref }}
-      - name: Build docker image for github registry
-        run: |
-          make docker-image-build DOCKER_TAG=${{ steps.get-tag-reference.outputs.tag }}
-      - name: Push docker image to github registry
-        run: |
-          make docker-image-push \
-            DOCKER_USER=${{ github.actor }} \
-            DOCKER_PASSWORD=${{ secrets.GITHUB_TOKEN }} \
-            DOCKER_TAG=${{ steps.get-tag-reference.outputs.tag }}
-      - name: Build docker image for github registry as latest
-        run: |
-          make docker-image-build DOCKER_TAG="latest"
-      - name: Push docker image to github registry as latest
-        run: |
-          make docker-image-push \
-            DOCKER_USER=${{ github.actor }} \
-            DOCKER_PASSWORD=${{ secrets.GITHUB_TOKEN }} \
-            DOCKER_TAG="latest"
       - name: Build docker image for docker hub registry
         run: |
           make docker-image-build \
-            DOCKER_IMAGE=${{ github.repository }} \
             DOCKER_TAG=${{ steps.get-tag-reference.outputs.tag }}
       - name: Push docker image to docker hub registry
         run: |
           make docker-image-push \
-            DOCKER_REGISTRY=docker.io \
-            DOCKER_IMAGE=${{ github.repository }} \
             DOCKER_USER=${{ secrets.DOCKER_HUB_USERNAME }} \
             DOCKER_PASSWORD=${{ secrets.DOCKER_HUB_PASSWORD }} \
             DOCKER_TAG=${{ steps.get-tag-reference.outputs.tag }}
       - name: Build docker image for docker hub registry as latest
-        run: |
-          make docker-image-build \
-            DOCKER_IMAGE=${{ github.repository }} \
-            DOCKER_TAG="latest"
+        run: make docker-image-build
+        if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
       - name: Push docker image to docker hub registry as latest
         run: |
           make docker-image-push \
-            DOCKER_REGISTRY=docker.io \
-            DOCKER_IMAGE=${{ github.repository }} \
             DOCKER_USER=${{ secrets.DOCKER_HUB_USERNAME }} \
-            DOCKER_PASSWORD=${{ secrets.DOCKER_HUB_PASSWORD }} \
-            DOCKER_TAG="latest"
+            DOCKER_PASSWORD=${{ secrets.DOCKER_HUB_PASSWORD }}
+        if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
+
   release:
     name: Upload release asset
     runs-on: ubuntu-18.04

@@ -8,11 +8,11 @@ CGO_ENABLED?=0
 
 BUIlD_VERSION?=latest
 
-DOCKER_REGISTRY?=docker.pkg.github.com
-DOCKER_IMAGE?=${DOCKER_REGISTRY}/insidieux/pinchy/${APP_NAME}
+DOCKER_REGISTRY?=docker.io
+DOCKER_IMAGE?=insidieux/${APP_NAME}
+DOCKER_TAG?=latest
 DOCKER_USER=
 DOCKER_PASSWORD=
-DOCKER_TAG?=latest
 
 ifeq (, $(shell which docker))
 $(error "Binary docker not found in $(PATH)")
@@ -111,6 +111,12 @@ build:
 
 .PHONY: docker-image-build
 docker-image-build:
+ifndef DOCKER_IMAGE
+	$(error DOCKER_IMAGE is not set)
+endif
+ifndef DOCKER_TAG
+	$(error DOCKER_TAG is not set)
+endif
 	@docker rmi ${DOCKER_IMAGE}:${DOCKER_TAG} || true
 	@docker build \
 		-f ${PWD}/build/docker/cmd/pinchy/Dockerfile \
@@ -119,6 +125,21 @@ docker-image-build:
 
 .PHONY: docker-image-push
 docker-image-push:
+ifndef DOCKER_REGISTRY
+	$(error DOCKER_REGISTRY is not set)
+endif
+ifndef DOCKER_USER
+	$(error DOCKER_USER is not set)
+endif
+ifndef DOCKER_PASSWORD
+	$(error DOCKER_PASSWORD is not set)
+endif
+ifndef DOCKER_IMAGE
+	$(error DOCKER_IMAGE is not set)
+endif
+ifndef DOCKER_TAG
+	$(error DOCKER_TAG is not set)
+endif
 	@docker login -u ${DOCKER_USER} -p ${DOCKER_PASSWORD} ${DOCKER_REGISTRY}
 	@docker push ${DOCKER_IMAGE}:${DOCKER_TAG}
 
