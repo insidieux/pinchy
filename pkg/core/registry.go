@@ -10,6 +10,6 @@ type (
 	Registry interface {
 		Fetch(ctx context.Context) (Services, error)
 		Register(ctx context.Context, service *Service) error
-		Deregister(ctx context.Context, serviceID string) error
+		Deregister(ctx context.Context, service *Service) error
 	}
 )

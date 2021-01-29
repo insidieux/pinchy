@@ -20,7 +20,7 @@ func init() {
 	set := pflag.NewFlagSet(sourceName, pflag.ExitOnError)
 	set.String(source.MakeFlagName(flagFilePath), `$HOME/services.yml`, `YML file config path`)
 
-	if err := source.Register(sourceName, set, NewSource); err != nil {
+	if err := source.Register(sourceName, set, NewSource, false); err != nil {
 		panic(err)
 	}
 }

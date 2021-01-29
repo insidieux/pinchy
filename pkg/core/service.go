@@ -9,6 +9,14 @@ import (
 )
 
 type (
+	// Node contains info about host/node/server, hosting service. Used for catalog registration in consul.
+	Node struct {
+		Node       string             `json:","`
+		Address    string             `json:","`
+		Datacenter *string            `json:",omitempty"`
+		NodeMeta   *map[string]string `json:",omitempty"`
+	}
+
 	// Service contains all the necessary information for further registration in Registry
 	Service struct {
 		Name    string             `json:","`
@@ -17,6 +25,7 @@ type (
 		Port    *int               `json:",omitempty"`
 		Tags    *[]string          `json:",omitempty"`
 		Meta    *map[string]string `json:",omitempty"`
+		Node    *Node              `json:",omitempty"`
 	}
 
 	// Services is simple helper for hold slice of Service's
@@ -30,6 +39,14 @@ func (s *Service) Validate(_ context.Context) error {
 	}
 	if s.Address == `` {
 		return errors.Errorf(`service "%s" field "address" is required and cannot be empty`, s.Name)
+	}
+	if s.Node != nil {
+		if s.Node.Node == `` {
+			return errors.Errorf(`service "%s" field "node.node" is required and cannot be empty`, s.Name)
+		}
+		if s.Node.Address == `` {
+			return errors.Errorf(`service "%s" field "node.address" is required and cannot be empty`, s.Name)
+		}
 	}
 	return nil
 }

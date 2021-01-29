@@ -99,7 +99,7 @@ func (m *Manager) findOrphan(incoming Services, registered Services) Services {
 func (m *Manager) deregisterServices(ctx context.Context, services Services) error {
 	me := new(managerError)
 	for _, service := range services {
-		if err := m.registry.Deregister(ctx, service.RegistrationID()); err != nil {
+		if err := m.registry.Deregister(ctx, service); err != nil {
 			me.Add(errors.Wrapf(err, `failed to deregister service "%s" from registry`, service.RegistrationID()))
 			continue
 		}

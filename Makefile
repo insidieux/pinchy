@@ -143,7 +143,6 @@ endif
 	@docker login -u ${DOCKER_USER} -p ${DOCKER_PASSWORD} ${DOCKER_REGISTRY}
 	@docker push ${DOCKER_IMAGE}:${DOCKER_TAG}
 
-
 .PHONY: mockery
 mockery:
 ifndef MOCKERY_SOURCE_DIR

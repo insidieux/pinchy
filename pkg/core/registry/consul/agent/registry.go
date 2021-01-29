@@ -1,4 +1,4 @@
-package consul
+package agent
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 	"github.com/agrea/ptr"
 	"github.com/hashicorp/consul/api"
 	"github.com/insidieux/pinchy/pkg/core"
+	"github.com/insidieux/pinchy/pkg/core/registry/consul"
 	"github.com/pkg/errors"
 	"github.com/thoas/go-funk"
 )
@@ -19,19 +20,16 @@ type (
 		ServiceDeregister(serviceID string) error
 	}
 
-	// Tag is a common tag for query and register services in registry
-	Tag string
-
 	// Registry is implementation of core.Registry interface
 	Registry struct {
 		agent  Agent
 		logger core.LoggerInterface
-		tag    Tag
+		tag    consul.Tag
 	}
 )
 
 // NewRegistry provide Registry as core.Registry implementation
-func NewRegistry(agent Agent, tag Tag) *Registry {
+func NewRegistry(agent Agent, tag consul.Tag) *Registry {
 	return &Registry{
 		agent: agent,
 		tag:   tag,
@@ -45,6 +43,7 @@ func (r *Registry) Fetch(_ context.Context) (core.Services, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to fetch registered services info`)
 	}
+
 	r.logger.Infoln(`Prepare registered services list`)
 	result := make([]*core.Service, 0)
 	for _, item := range registered {
@@ -68,10 +67,10 @@ func (r *Registry) Fetch(_ context.Context) (core.Services, error) {
 }
 
 // Deregister make request for Agent.ServiceDeregister by core.Service RegistrationID
-func (r *Registry) Deregister(_ context.Context, serviceID string) error {
-	r.logger.Infof(`Send service deregister consul agent request for service "%s"`, serviceID)
-	if err := r.agent.ServiceDeregister(serviceID); err != nil {
-		return errors.Wrapf(err, `failed deregister service by service id "%s"`, serviceID)
+func (r *Registry) Deregister(_ context.Context, service *core.Service) error {
+	r.logger.Infof(`Send service deregister consul agent request for service "%s"`, service.RegistrationID())
+	if err := r.agent.ServiceDeregister(service.RegistrationID()); err != nil {
+		return errors.Wrapf(err, `failed deregister service by service id "%s"`, service.RegistrationID())
 	}
 	return nil
 }
@@ -82,6 +81,7 @@ func (r *Registry) Register(ctx context.Context, service *core.Service) error {
 	if err := service.Validate(ctx); err != nil {
 		return errors.Wrap(err, `service has validation error before registration`)
 	}
+
 	asr := &api.AgentServiceRegistration{
 		Kind:    api.ServiceKindTypical,
 		Name:    service.Name,
@@ -101,6 +101,7 @@ func (r *Registry) Register(ctx context.Context, service *core.Service) error {
 	if service.Meta != nil {
 		asr.Meta = *service.Meta
 	}
+
 	r.logger.Infof(`Send service register consul agent request for service "%s"`, service.RegistrationID())
 	if err := r.agent.ServiceRegister(asr); err != nil {
 		return errors.Wrapf(err, `failed register service by service id "%s"`, service.RegistrationID())
