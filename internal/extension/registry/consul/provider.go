@@ -2,6 +2,7 @@ package consul
 
 import (
 	pkgConsul "github.com/insidieux/pinchy/pkg/core/registry/consul"
+	"github.com/insidieux/pinchy/pkg/core/registry/consul/catalog"
 
 	"github.com/hashicorp/consul/api"
 	"github.com/insidieux/pinchy/internal/extension/registry"
@@ -83,6 +84,6 @@ func provideAgent(c client) agent.Agent {
 	return c.Agent()
 }
 
-func provideCatalog(c client) *api.Catalog {
+func provideCatalog(c client) catalog.Catalog {
 	return c.Catalog()
 }
