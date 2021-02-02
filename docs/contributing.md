@@ -19,4 +19,4 @@
 - Add new sub directory to `/internal/extension/{source,registry}`
 - Put wiring code for dynamic load implementations:
   - Register implementation of `ProviderInterface` at `init` function
-  - Add anonymous import to `/cmd/pinchy/modules.go`
+  - Add anonymous import to `/cmd/pinchy/internal/modules.go`

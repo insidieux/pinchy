@@ -1,15 +1,28 @@
 version: '3'
 
 services:
-    pinchy:
-      image: insidieux/pinchy:v1.0.0
+    pinchy-1:
+      image: insidieux/pinchy:v1.1.0
       volumes:
         - ./configs/source/file:/etc/pinchy
       command:
         - 'file'
-        - 'consul'
+        - 'consul-agent'
         - '--source.path'
-        - '/etc/pinchy/example.yml'
+        - '/etc/pinchy/consul-agent.yml'
         - '--registry.address'
         - 'http://consul:8500'
         - 'once'
+    pinchy-2:
+      image: insidieux/pinchy:v1.1.0
+      volumes:
+        - ./configs/source/file:/etc/pinchy
+      command:
+        - 'file'
+        - 'consul-catalog'
+        - '--source.path'
+        - '/etc/pinchy/consul-catalog.yml'
+        - '--registry.address'
+        - 'http://consul:8500'
+        - 'once'
+

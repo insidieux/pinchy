@@ -30,22 +30,23 @@ type (
 
 	// Services is simple helper for hold slice of Service's
 	Services []*Service
+
+	// ValidationFunc is a func providing additional validation, called by Source or Registry
+	ValidationFunc func(context.Context, *Service) error
 )
 
 // Validate process validation to check required fields for Service, such as Service.Name and Service.Address
-func (s *Service) Validate(_ context.Context) error {
+// Also there is a possibility to pass your own additional checks
+func (s *Service) Validate(ctx context.Context, checks ...ValidationFunc) error {
 	if s.Name == `` {
 		return errors.New(`service field "name" is required and cannot be empty`)
 	}
 	if s.Address == `` {
 		return errors.Errorf(`service "%s" field "address" is required and cannot be empty`, s.Name)
 	}
-	if s.Node != nil {
-		if s.Node.Node == `` {
-			return errors.Errorf(`service "%s" field "node.node" is required and cannot be empty`, s.Name)
-		}
-		if s.Node.Address == `` {
-			return errors.Errorf(`service "%s" field "node.address" is required and cannot be empty`, s.Name)
+	for _, check := range checks {
+		if err := check(ctx, s); err != nil {
+			return errors.Wrapf(err, `service "%s" custom check failed`, s.Name)
 		}
 	}
 	return nil

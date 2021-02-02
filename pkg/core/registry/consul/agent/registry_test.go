@@ -41,7 +41,7 @@ type newRegistryTestSuite struct {
 	suite.Suite
 }
 
-func (s *newRegistryTestSuite) TestNewSource() {
+func (s *newRegistryTestSuite) TestNewRegistry() {
 	got := NewRegistry(nil, ``)
 	s.Implements((*core.Registry)(nil), got)
 	s.Equal(&Registry{nil, nil, ``}, got)
@@ -113,6 +113,14 @@ func (s *registryDeregisterTestSuite) SetupTest() {
 		Name:    `service`,
 		Address: "127.0.0.1",
 	}
+}
+
+func (s *registryDeregisterTestSuite) TestErrorServiceValidation() {
+	err := s.registry.Deregister(context.Background(), &core.Service{
+		Name: `name`,
+	})
+	s.Error(err)
+	s.Contains(err.Error(), `service has validation error before deregister`)
 }
 
 func (s *registryDeregisterTestSuite) TestErrorAgentDeregister() {

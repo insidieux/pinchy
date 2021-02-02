@@ -2,6 +2,7 @@ package core
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/agrea/ptr"
@@ -45,6 +46,15 @@ func (s *serviceValidateTestSuite) TestEmptyName() {
 func (s *serviceValidateTestSuite) TestEmptyAddress() {
 	s.service.Name = `service`
 	s.Error(s.service.Validate(context.Background()))
+}
+
+func (s *serviceValidateTestSuite) TestCustomValidation() {
+	s.service.Name = `service`
+	s.service.Address = `127.0.0.1`
+	s.service.Port = ptr.Int(80)
+	s.Error(s.service.Validate(context.Background(), func(ctx context.Context, service *Service) error {
+		return errors.New(`expected error`)
+	}))
 }
 
 func (s *serviceValidateTestSuite) TestValidationPassed() {

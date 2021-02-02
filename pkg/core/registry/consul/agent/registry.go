@@ -67,7 +67,12 @@ func (r *Registry) Fetch(_ context.Context) (core.Services, error) {
 }
 
 // Deregister make request for Agent.ServiceDeregister by core.Service RegistrationID
-func (r *Registry) Deregister(_ context.Context, service *core.Service) error {
+func (r *Registry) Deregister(ctx context.Context, service *core.Service) error {
+	r.logger.Infof(`Validate service "%s"`, service.RegistrationID())
+	if err := service.Validate(ctx); err != nil {
+		return errors.Wrap(err, `service has validation error before deregister`)
+	}
+
 	r.logger.Infof(`Send service deregister consul agent request for service "%s"`, service.RegistrationID())
 	if err := r.agent.ServiceDeregister(service.RegistrationID()); err != nil {
 		return errors.Wrapf(err, `failed deregister service by service id "%s"`, service.RegistrationID())

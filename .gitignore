@@ -1,5 +1,6 @@
 /.idea
 /vendor
 
+/coverage.out
 mock_*_test.go
 wire_gen.go

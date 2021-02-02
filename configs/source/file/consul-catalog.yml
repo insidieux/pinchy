@@ -7,8 +7,12 @@
     - tag-2
   meta:
     key: value
+  node:
+    node: node-1
+    address: 127.0.0.100
+
 - name: service-name
-  address: 127.0.0.1
+  address: 127.0.0.2
   id: service-id-2
   port: 80
   tags:
@@ -18,5 +22,4 @@
     key: value
   node:
     node: node-1
-    address: 127.0.0.1
-
+    address: 127.0.0.100

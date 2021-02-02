@@ -4,4 +4,4 @@
 - [Contributing guide][]
 
 [User guide]: ./user-guide.md
-[Contributing guide]: ./contributing-guide.md
+[Contributing guide]: ./contributing.md

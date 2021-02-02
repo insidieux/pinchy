@@ -1,0 +1,19 @@
+- name: service-name
+  address: 127.0.0.1
+  id: service-id-1
+  port: 80
+  tags:
+    - tag-1
+    - tag-2
+  meta:
+    key: value
+
+- name: service-name
+  address: 127.0.0.2
+  id: service-id-2
+  port: 80
+  tags:
+    - tag-1
+    - tag-2
+  meta:
+    key: value

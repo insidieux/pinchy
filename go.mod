@@ -6,7 +6,6 @@ require (
 	github.com/agrea/ptr v0.0.0-20180711073057-77a518d99b7b
 	github.com/google/wire v0.5.0
 	github.com/hashicorp/consul/api v1.8.1
-	github.com/hashicorp/go-cleanhttp v0.5.1
 	github.com/pkg/errors v0.9.1
 	github.com/sethvargo/go-signalcontext v0.1.0
 	github.com/sirupsen/logrus v1.7.0
