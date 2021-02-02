@@ -4,21 +4,35 @@ package consul
 
 import (
 	"github.com/google/wire"
-	"github.com/hashicorp/go-cleanhttp"
 	"github.com/insidieux/pinchy/pkg/core"
-	"github.com/insidieux/pinchy/pkg/core/registry/consul"
+	"github.com/insidieux/pinchy/pkg/core/registry/consul/agent"
+	"github.com/insidieux/pinchy/pkg/core/registry/consul/catalog"
 	"github.com/spf13/viper"
 )
 
-func NewRegistry(*viper.Viper) (core.Registry, func(), error) {
-	panic(wire.Build(
-		cleanhttp.DefaultPooledTransport,
+var (
+	wireSet = wire.NewSet(
 		provideClientConfig,
 		provideConsulClientFactory,
 		provideClient,
+		provideTag,
+	)
+)
+
+func NewAgentRegistry(*viper.Viper) (core.Registry, func(), error) {
+	panic(wire.Build(
+		wireSet,
 		provideAgent,
-		consul.NewRegistry,
-		wire.Value(consul.Tag(defaultCommonTag)),
-		wire.Bind(new(core.Registry), new(*consul.Registry)),
+		agent.NewRegistry,
+		wire.Bind(new(core.Registry), new(*agent.Registry)),
+	))
+}
+
+func NewCatalogRegistry(*viper.Viper) (core.Registry, func(), error) {
+	panic(wire.Build(
+		wireSet,
+		provideCatalog,
+		catalog.NewRegistry,
+		wire.Bind(new(core.Registry), new(*catalog.Registry)),
 	))
 }

@@ -1,28 +1,30 @@
 package consul
 
 import (
-	"net/http"
-
 	pkgConsul "github.com/insidieux/pinchy/pkg/core/registry/consul"
 
 	"github.com/hashicorp/consul/api"
 	"github.com/insidieux/pinchy/internal/extension/registry"
+	"github.com/insidieux/pinchy/pkg/core/registry/consul/agent"
+	"github.com/insidieux/pinchy/pkg/core/registry/consul/catalog"
 	"github.com/pkg/errors"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 )
 
 const (
-	registryName = `consul`
+	registryName        = `consul`
+	registryAgentName   = `consul-agent`
+	registryCatalogName = `consul-catalog`
 
 	flagConsulAddress = `address`
-
-	defaultCommonTag = `pinchy`
+	flagTag           = `tag`
 )
 
 type (
 	client interface {
 		Agent() *api.Agent
+		Catalog() *api.Catalog
 	}
 	factory func(*api.Config) (*api.Client, error)
 )
@@ -30,12 +32,31 @@ type (
 func init() {
 	set := pflag.NewFlagSet(registryName, pflag.ExitOnError)
 	set.String(registry.MakeFlagName(flagConsulAddress), `127.0.0.1:8500`, `Consul http api address`)
-	if err := registry.Register(registryName, set, NewRegistry); err != nil {
+	set.String(registry.MakeFlagName(flagTag), `pinchy`, `Common service tag added for all registered service`)
+	// register deprecated consul agent registry
+	if err := registry.Register(registryName, set, NewAgentRegistry, true); err != nil {
+		panic(err)
+	}
+	// register new consul agent registry
+	if err := registry.Register(registryAgentName, set, NewAgentRegistry, false); err != nil {
+		panic(err)
+	}
+	// register new consul catalog registry
+	if err := registry.Register(registryCatalogName, set, NewCatalogRegistry, false); err != nil {
 		panic(err)
 	}
 }
 
-func provideClientConfig(v *viper.Viper, transport *http.Transport) (*api.Config, error) {
+func provideTag(v *viper.Viper) (pkgConsul.Tag, error) {
+	flag := registry.MakeFlagName(flagTag)
+	tag := v.GetString(flag)
+	if tag == `` {
+		return ``, errors.Errorf(`Flag "%s" is required`, flag)
+	}
+	return pkgConsul.Tag(tag), nil
+}
+
+func provideClientConfig(v *viper.Viper) (*api.Config, error) {
 	flag := registry.MakeFlagName(flagConsulAddress)
 	address := v.GetString(flag)
 	if address == `` {
@@ -44,7 +65,6 @@ func provideClientConfig(v *viper.Viper, transport *http.Transport) (*api.Config
 
 	cfg := api.DefaultConfig()
 	cfg.Address = address
-	cfg.Transport = transport
 	return cfg, nil
 }
 
@@ -60,6 +80,10 @@ func provideClient(cfg *api.Config, factory factory) (client, error) {
 	return c, nil
 }
 
-func provideAgent(c client) pkgConsul.Agent {
+func provideAgent(c client) agent.Agent {
 	return c.Agent()
+}
+
+func provideCatalog(c client) catalog.Catalog {
+	return c.Catalog()
 }

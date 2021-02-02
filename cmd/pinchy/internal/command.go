@@ -29,10 +29,16 @@ func NewCommand(version string) *cobra.Command {
 			Use:   sourceProvider.Name(),
 			Short: fmt.Sprintf(`Fetch data from source "%s"`, sourceProvider.Name()),
 		}
+		if sourceProvider.Deprecated() {
+			sourceCmd.Deprecated = fmt.Sprintf(`source "%s" is deprecated`, sourceProvider.Name())
+		}
 		for _, registryProvider := range registry.GetProviderList() {
 			registryCmd := &cobra.Command{
 				Use:   registryProvider.Name(),
 				Short: fmt.Sprintf(`Save data in registry "%s"`, registryProvider.Name()),
+			}
+			if registryProvider.Deprecated() {
+				registryCmd.Deprecated = fmt.Sprintf(`registry "%s" is deprecated`, registryProvider.Name())
 			}
 			onceCommand := &cobra.Command{
 				Use:   `once`,

@@ -9,6 +9,14 @@ import (
 )
 
 type (
+	// Node contains info about host/node/server, hosting service. Used for catalog registration in consul.
+	Node struct {
+		Node       string             `json:","`
+		Address    string             `json:","`
+		Datacenter *string            `json:",omitempty"`
+		NodeMeta   *map[string]string `json:",omitempty"`
+	}
+
 	// Service contains all the necessary information for further registration in Registry
 	Service struct {
 		Name    string             `json:","`
@@ -17,19 +25,29 @@ type (
 		Port    *int               `json:",omitempty"`
 		Tags    *[]string          `json:",omitempty"`
 		Meta    *map[string]string `json:",omitempty"`
+		Node    *Node              `json:",omitempty"`
 	}
 
 	// Services is simple helper for hold slice of Service's
 	Services []*Service
+
+	// ValidationFunc is a func providing additional validation, called by Source or Registry
+	ValidationFunc func(context.Context, *Service) error
 )
 
 // Validate process validation to check required fields for Service, such as Service.Name and Service.Address
-func (s *Service) Validate(_ context.Context) error {
+// Also there is a possibility to pass your own additional checks
+func (s *Service) Validate(ctx context.Context, checks ...ValidationFunc) error {
 	if s.Name == `` {
 		return errors.New(`service field "name" is required and cannot be empty`)
 	}
 	if s.Address == `` {
 		return errors.Errorf(`service "%s" field "address" is required and cannot be empty`, s.Name)
+	}
+	for _, check := range checks {
+		if err := check(ctx, s); err != nil {
+			return errors.Wrapf(err, `service "%s" custom check failed`, s.Name)
+		}
 	}
 	return nil
 }

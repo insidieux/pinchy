@@ -24,7 +24,7 @@ all: cleanup vendor wire lint test build
 .PHONY: cleanup
 cleanup:
 	@rm ${PWD}/bin/${APP_NAME}* || true
-	@rm ${PWD}/tests/coverage.out || true
+	@rm ${PWD}/coverage.out || true
 	@find ${PWD} -type f -name "wire_gen.go" -delete
 	@find ${PWD} -type f -name "mock_*_test.go" -delete
 	@rm -r ${PWD}/vendor || true
@@ -80,7 +80,7 @@ lint:
 
 .PHONY: test
 test:
-	@rm -r ${PWD}/test/coverage.out || true
+	@rm -r ${PWD}/coverage.out || true
 	@docker run --rm \
 		-v ${PWD}:/project \
 		-w /project \
@@ -89,7 +89,7 @@ test:
 				-race \
 				-mod vendor \
 				-covermode=atomic \
-				-coverprofile=/project/test/coverage.out \
+				-coverprofile=/project/coverage.out \
 					/project/...
 
 .PHONY: build
@@ -142,7 +142,6 @@ ifndef DOCKER_TAG
 endif
 	@docker login -u ${DOCKER_USER} -p ${DOCKER_PASSWORD} ${DOCKER_REGISTRY}
 	@docker push ${DOCKER_IMAGE}:${DOCKER_TAG}
-
 
 .PHONY: mockery
 mockery:

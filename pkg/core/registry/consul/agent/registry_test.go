@@ -1,4 +1,4 @@
-package consul
+package agent
 
 import (
 	"context"
@@ -41,7 +41,7 @@ type newRegistryTestSuite struct {
 	suite.Suite
 }
 
-func (s *newRegistryTestSuite) TestNewSource() {
+func (s *newRegistryTestSuite) TestNewRegistry() {
 	got := NewRegistry(nil, ``)
 	s.Implements((*core.Registry)(nil), got)
 	s.Equal(&Registry{nil, nil, ``}, got)
@@ -102,25 +102,38 @@ type registryDeregisterTestSuite struct {
 	suite.Suite
 	agent    *MockAgent
 	registry *Registry
+	service  *core.Service
 }
 
 func (s *registryDeregisterTestSuite) SetupTest() {
 	s.agent = new(MockAgent)
 	s.registry = NewRegistry(s.agent, `test`)
 	s.registry.logger, _ = test.NewNullLogger()
+	s.service = &core.Service{
+		Name:    `service`,
+		Address: "127.0.0.1",
+	}
+}
+
+func (s *registryDeregisterTestSuite) TestErrorServiceValidation() {
+	err := s.registry.Deregister(context.Background(), &core.Service{
+		Name: `name`,
+	})
+	s.Error(err)
+	s.Contains(err.Error(), `service has validation error before deregister`)
 }
 
 func (s *registryDeregisterTestSuite) TestErrorAgentDeregister() {
 	s.agent.On(`ServiceDeregister`, `service`).Return(errors.New(`expected error`))
 
-	err := s.registry.Deregister(context.Background(), `service`)
+	err := s.registry.Deregister(context.Background(), s.service)
 	s.EqualError(err, `failed deregister service by service id "service": expected error`)
 }
 
 func (s *registryDeregisterTestSuite) TestSuccess() {
 	s.agent.On(`ServiceDeregister`, `service`).Return(nil)
 
-	err := s.registry.Deregister(context.Background(), `service`)
+	err := s.registry.Deregister(context.Background(), s.service)
 	s.NoError(err)
 }
 

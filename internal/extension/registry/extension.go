@@ -28,15 +28,17 @@ type (
 		Name() string
 		Flags() *pflag.FlagSet
 		Factory() Factory
+		Deprecated() bool
 	}
 
 	// ProviderList is helper custom type for handle registration and lookup for slice of ProviderInterface
 	ProviderList []ProviderInterface
 
 	provider struct {
-		name    string
-		flags   *pflag.FlagSet
-		factory Factory
+		name       string
+		flags      *pflag.FlagSet
+		factory    Factory
+		deprecated bool
 	}
 )
 
@@ -62,11 +64,12 @@ func MakeFlagName(name string) string {
 // Register new ProviderInterface implementation by name, flags and factory
 // Register returns error if ProviderInterface already registered with same name
 // Register returns error if ProviderInterface provide flags with incorrect name prefix
-func Register(name string, flags *pflag.FlagSet, factory Factory) error {
+func Register(name string, flags *pflag.FlagSet, factory Factory, deprecated bool) error {
 	return providerList.register(&provider{
-		name:    name,
-		flags:   flags,
-		factory: factory,
+		name:       name,
+		flags:      flags,
+		factory:    factory,
+		deprecated: deprecated,
 	})
 }
 
@@ -75,14 +78,19 @@ func (p *provider) Name() string {
 	return p.name
 }
 
-// Name return ProviderInterface implementation flags
+// Flags return ProviderInterface implementation flags
 func (p *provider) Flags() *pflag.FlagSet {
 	return p.flags
 }
 
-// Name return ProviderInterface implementation factory
+// Factory return ProviderInterface implementation factory
 func (p *provider) Factory() Factory {
 	return p.factory
+}
+
+// Deprecated return ProviderInterface implementation factory
+func (p *provider) Deprecated() bool {
+	return p.deprecated
 }
 
 func (pl *ProviderList) register(p ProviderInterface) error {
