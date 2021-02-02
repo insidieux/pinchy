@@ -2,11 +2,11 @@ package consul
 
 import (
 	pkgConsul "github.com/insidieux/pinchy/pkg/core/registry/consul"
-	"github.com/insidieux/pinchy/pkg/core/registry/consul/catalog"
 
 	"github.com/hashicorp/consul/api"
 	"github.com/insidieux/pinchy/internal/extension/registry"
 	"github.com/insidieux/pinchy/pkg/core/registry/consul/agent"
+	"github.com/insidieux/pinchy/pkg/core/registry/consul/catalog"
 	"github.com/pkg/errors"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
